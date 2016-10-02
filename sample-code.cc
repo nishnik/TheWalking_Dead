@@ -19,6 +19,10 @@
  * along with libcmaes.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+
+/////// OMP_NUM_THREADS=n ./sample_code
+
+
 #include "cmaes.h"
 #include <iostream>
 #include <chrono>
@@ -37,6 +41,7 @@ FitFunc fsphere = [](const double *x, const int N)
     string s = "/home/kgpkubs/git_nish/kgpkubssim3d/paramfiles/defaultParamstraining.txt";
     std::stringstream ss;
     ss << std::this_thread::get_id();
+    cerr <<" \n thread id: " << std::this_thread::get_id() << " -----------------------------------------\n";
     s += ss.str();
     auto map_copy = map_params;
     int j = 0;
@@ -57,32 +62,19 @@ FitFunc fsphere = [](const double *x, const int N)
     }
     fout.close();
     cerr << "successfully created file " << s << '\n';
-    // }
     cerr << "Running agent\n";
     system(("sh /home/kgpkubs/git_nish/kgpkubssim3d/optimization/run.sh " + s + ' ' + ss.str()).c_str());
-    // const int chk = system((string("./sample_start-optimization.sh ")+ s).c_str());
-    // assert(chk == 0);
-    // std::this_thread::sleep_for(d_wait_time);
     ifstream fl("/home/kgpkubs/git_nish/kgpkubssim3d/"+ss.str());
-    // double score;
-    // while(!fl.eof()) {
-    //   // std::this_thread::sleep_for(d_wait_time2);
-    //   fl.close();
-    //   fl.open(s);
-    // }
     double ret;
     assert(!fl.eof());
     fl >> ret;
     fstream scores("last_scores", std::fstream::app);
     assert(ret >=0);
     if (ret < 0) {
-        throw std::runtime_error("\n\n\n\n\n\n\n\n:O\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n");
+        throw std::runtime_error("score came to be less than zero");
     }
     scores << ret << '\n';
     cerr << "score = " << ret << '\n';
-    if ( !flag) {
-        ret *= 2;
-    }
     scores.close();
     return -ret;
 };
