@@ -38,41 +38,47 @@ map<string, double> map_params;
 vector<string> which_params;
 FitFunc fsphere = [](const double *x, const int N)
 {
-    string s = "/home/kgpkubs/git_nish/kgpkubssim3d/paramfiles/defaultParamstraining.txt";
-    std::stringstream ss;
-    ss << std::this_thread::get_id();
-    cerr <<" \n thread id: " << std::this_thread::get_id() << " -----------------------------------------\n";
-    s += ss.str();
-    auto map_copy = map_params;
-    int j = 0;
-    for(const auto& i: which_params) {
-        map_copy[i] = x[j++];
-    }
-    // delete the previous file of this name.
-    ofstream fout(s);
-    if(!fout) {
-        cerr << "Failed to create file\n\n\n";
-        throw "Failed to create file\n\n\n";
-        exit(-1);
-    }
-    {
-        for (const auto& i: map_copy) {
-            fout << i.first << '\t' << i.second << '\n';
+        string s = "/home/kgpkubs/git_nish/kgpkubssim3d/paramfiles/defaultParamstraining.txt";
+        std::stringstream ss;
+        ss << std::this_thread::get_id();
+        cerr <<" \n thread id: " << std::this_thread::get_id() << " -----------------------------------------\n";
+        s += ss.str();
+        auto map_copy = map_params;
+        int j = 0;
+        for(const auto& i: which_params) {
+            map_copy[i] = x[j++];
         }
-    }
-    fout.close();
-    cerr << "successfully created file " << s << '\n';
-    cerr << "Running agent\n";
-    system(("sh /home/kgpkubs/git_nish/kgpkubssim3d/optimization/run.sh " + s + ' ' + ss.str()).c_str());
-    ifstream fl("/home/kgpkubs/git_nish/kgpkubssim3d/"+ss.str());
-    double ret;
-    assert(!fl.eof());
-    fl >> ret;
+        // delete the previous file of this name.
+        ofstream fout(s);
+        if(!fout) {
+            cerr << "Failed to create file\n\n\n";
+            throw "Failed to create file\n\n\n";
+            exit(-1);
+        }
+        {
+            for (const auto& i: map_copy) {
+                fout << i.first << '\t' << i.second << '\n';
+            }
+        }
+        fout.close();
+        cerr << "successfully created file " << s << '\n';
+        double ret;
+    do // if ret is less than 0.1 that means
+    {
+            cerr << "Running agent\n";
+            system(("sh /home/kgpkubs/git_nish/kgpkubssim3d/optimization/run.sh " + s + ' ' + ss.str()).c_str());
+            ifstream fl("/home/kgpkubs/git_nish/kgpkubssim3d/"+ss.str());
+            
+            assert(!fl.eof());
+            fl >> ret;
+            
+            // negative reward for the fall
+            // assert(ret >=0);
+            // if (ret < 0) {
+            //     throw std::runtime_error("score came to be less than zero");
+            // }
+    } while (ret >=0 && ret <= 0.52); // somehow server stopped
     fstream scores("last_scores", std::fstream::app);
-    assert(ret >=0);
-    if (ret < 0) {
-        throw std::runtime_error("score came to be less than zero");
-    }
     scores << ret << '\n';
     cerr << "score = " << ret << '\n';
     scores.close();
