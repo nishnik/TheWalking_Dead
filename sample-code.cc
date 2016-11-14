@@ -24,9 +24,9 @@
 
 
 #include "cmaes.h"
-#include <iostream>
-#include <chrono>
-#include <thread>
+// #include <iostream>
+// #include <chrono>
+// #include <thread>
 #include "bits/stdc++.h"
 using namespace libcmaes;
 using namespace std::chrono;
@@ -36,33 +36,36 @@ const auto d_wait_time = std::chrono::seconds(10);
 const auto d_wait_time2 = std::chrono::seconds(1);
 map<string, double> map_params;
 vector<string> which_params;
+const unsigned max_scores_to_save = 5;
+map<float, map<string, double> > top_scores;
+std::mutex mtx;
 FitFunc fsphere = [](const double *x, const int N)
 {
-        string s = "/home/kgpkubs/git_nish/kgpkubssim3d/paramfiles/defaultParamstraining.txt";
-        std::stringstream ss;
-        ss << std::this_thread::get_id();
-        cerr <<" \n thread id: " << std::this_thread::get_id() << " -----------------------------------------\n";
-        s += ss.str();
-        auto map_copy = map_params;
-        int j = 0;
-        for(const auto& i: which_params) {
-            map_copy[i] = x[j++];
+    string s = "/home/kgpkubs/git_nish/kgpkubssim3d/paramfiles/defaultParamstraining.txt";
+    std::stringstream ss;
+    ss << std::this_thread::get_id();
+    cerr <<" \n thread id: " << std::this_thread::get_id() << " -----------------------------------------\n";
+    s += ss.str();
+    auto map_copy = map_params;
+    int j = 0;
+    for(const auto& i: which_params) {
+        map_copy[i] = x[j++];
+    }
+    // delete the previous file of this name.
+    ofstream fout(s);
+    if(!fout) {
+        cerr << "Failed to create file\n\n\n";
+        throw "Failed to create file\n\n\n";
+        exit(-1);
+    }
+
+        for (const auto& i: map_copy) {
+            fout << i.first << '\t' << i.second << '\n';
         }
-        // delete the previous file of this name.
-        ofstream fout(s);
-        if(!fout) {
-            cerr << "Failed to create file\n\n\n";
-            throw "Failed to create file\n\n\n";
-            exit(-1);
-        }
-        {
-            for (const auto& i: map_copy) {
-                fout << i.first << '\t' << i.second << '\n';
-            }
-        }
-        fout.close();
-        cerr << "successfully created file " << s << '\n';
-        double ret;
+
+    fout.close();
+    cerr << "successfully created file " << s << '\n';
+    double ret;
     do // if ret is less than 0.1 that means
     {
             cerr << "Running agent\n";
@@ -82,6 +85,29 @@ FitFunc fsphere = [](const double *x, const int N)
     scores << ret << '\n';
     cerr << "score = " << ret << '\n';
     scores.close();
+    bool flag = 1;
+    int rmv = -1;
+    mtx.lock();
+    if(top_scores.size() < max_scores_to_save) {
+    	top_scores[ret] = map_copy;
+    } else {
+    	auto it = top_scores.end();--it;
+    	if(ret > it->first) {
+    		rmv = (it->first)*100;
+    		top_scores.erase(it);
+	    	top_scores[ret] = map_copy;
+    	} else flag = 0;
+    }
+    mtx.unlock();
+    if(rmv != -1) {
+    	system(("rm /home/kgpkubs/git_nish/kgpkubssim3d/paramfiles/save_training.txt"+to_string(rmv)).c_str());
+    }
+    if(flag) {
+    	int rt = ret*100;
+    	system(("mv "+ s +" /home/kgpkubs/git_nish/kgpkubssim3d/paramfiles/save_training.txt"+to_string(rt)).c_str());
+    } else {
+    	system(("rm "+s).c_str());
+    }
     return -ret;
 };
 
