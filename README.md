@@ -18,10 +18,10 @@ Humanoid walking serves as an important challenge in the field of Robotics. This
 
 Humanoid Nao :
 
-![Nao](TheWalking_Dead/Images/Nao.png)
+![Nao](https://github.com/cs60050/TheWalking_Dead/blob/master/Images/Nao.png)
 
 Simulation Environment : 
 
-![Simulator](TheWalking_Dead/Images/3D-Sim.png)
+![Simulator](https://github.com/cs60050/TheWalking_Dead/blob/master/Images/3D-Sim.png)
 
 
